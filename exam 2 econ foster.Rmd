@@ -1,0 +1,208 @@
+---
+title: "exam 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, message=FALSE}
+
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#stat question 
+
+
+# a) For a Normal Distribution that has mean 1 and standard deviation 6.5, what is the area to the left of 1.65?
+pnorm(1.65, mean = 1, sd = 6.5)
+#0.5398278  answer
+
+#b) For a Normal Distribution that has mean 8 and standard deviation 2.7, what is the area in both tails farther from the mean than 13.67?
+
+#-5.67
+pnorm(-5.67, mean = 8, sd = 2.7)
+pnorm(21.67, mean = 8, sd = 2.7)
+ 0.9999998-2.06395e-07
+# 0.9999996 answer
+ 
+
+#c)For a Normal Distribution that has mean -11 and standard deviation 4, what is the area in both tails farther from the mean than -5.4?
+
+pnorm(-16.4, mean = -11, sd = 4)
+pnorm(-5.6, mean = -11, sd = 4)
+0.911492-0.08850799
+# 0.822984 answer
+
+#d)For a Normal Distribution that has mean 14 and standard deviation 7.4 what two values leave probability 0.158 in both tails?
+qnorm(0.156, mean = 14, sd = 7.4, lower.tail = TRUE)
+qnorm(0.156, mean = 14, sd = 7.4, lower.tail = FALSE)
+#[ 6.518346, 21.48165] answer
+
+#e)A regression coefficient is estimated to be equal to 6.56 with standard error 4.1; there are 24 degrees of freedom. What is the p-value (from the t-statistic) against the null hypothesis of zero?
+
+6.56/4.1
+pt(1.6, 24)
+0.9386593*2
+#1.877319 answer
+
+#f)A regression coefficient is estimated to be equal to -0.24 with standard error 0.4; there are 4 degrees of freedom. What is the p-value (from the t-statistic) against the null hypothesis of zero?
+-0.24/0.4
+pt(-0.6,4)
+0.2904206*2
+#0.5808412 answer
+
+
+
+
+```
+
+
+
+```{r}
+#question 2
+
+
+````
+
+```{r}
+#4
+load("~/Downloads/acs2017_ny/acs2017_ny_data.RData")
+
+attach(acs2017_ny)
+levels(LABFORCE)
+
+levels(LABFORCE)
+print(LABFORCE)
+str(LABFORCE)
+
+#subset sample of those who are in the laborforce those working partime and full time> #age range was between 25 to 55, becquse younfer people are likely to be working part time, while older people are more likely to be full time. 
+varbPT <-  (AGE >= 18) & (AGE <= 65) & (LABFORCE == 2) & (UHRSWORK > 0) & (UHRSWORK < 35) | (UHRSWORK >= 35)
+datus1 <- subset(acs2017_ny, varbPT)
+detach(acs2017_ny)
+attach(datus1)
+summary(datus1)
+summary(datus1$female)
+table(datus1$female)
+str(datus1)
+table(datus1$female)/sum(table(datus1$female))
+#within in sample 52.3 are men, and 47. are women 
+
+```
+
+
+```{r}
+
+#6. (20 points) Estimate a simple OLS model for hours worked, within your subsample.
+ # a. Explain what variables you choose to use as predictors. Do they seem exogenous? Consider whether polynomials in Age are important or interactions with dummy variables.  
+  #b. Do your estimates seem plausible? Are the estimates each statistically significant?
+  #c. Construct a joint test of whether a reasonable set of coefficients (such as age polynomials, or education dummies) are all zero.
+  #d. What are the predicted probabilities for a few particular groups?
+  #e. How many Type I and Type II errors are made by the model?
+
+
+mode1 <-lm(UHRSWORK ~ NCHILD + educ_hs + Hispanic + educ_advdeg, data = datus1)
+str(CITIZEN)
+
+#my predictor variables are NCHILD,educ_hs, Hispanic, educ_advdeg. 
+anova(mode1)
+summary(datus1$NCHILD)
+# both the summary and anova show the predictor variables to all be stastistically significant. N an individual with NCHild(-0.42) is less likely to be in working full time. An individual with
+# with high school education (-0.88) is less likely to be in working fulltime. Someone
+#who is hispanic(-1.34) is less likely to be working full time. 
+        
+#c)
+install.packages("car")
+#joint hypthesis test
+linearHypothesis(mode1, c("Hispanic=0", "NCHILD=0"))
+
+
+#Hispanic=0
+#NCHild=0
+
+#f test statistic for this joint hypothesis test 182.1 with a p value  -2.2e-16,Thus, we can reject the null hypothesis that both coefficients are zero at any level of significance commonly used in practice.
+
+#d. What are the predicted probabilities for a few particular groups?
+
+#predicted
+NNobs <- length(UHRSWORK)
+set.seed(12345) # just so you can replicate and get same "random" choices
+graph_obs <- (runif(NNobs) < 0.1) # so something like just 1/10 as many obs
+dat_graph <- subset(datus1,graph_obs)  
+
+plot(UHRSWORK ~ jitter(AGE, factor = 2), pch = 16, col = rgb(0.5, 0.5, 0.5, alpha = 0.2),ylim = c(0,1500), data = dat_graph)
+
+
+#prediction value for someone who is hispanic, with no child, a high school education and with an advance degree.  
+to_be_predicted2 <- data.frame(AGE = 18:65, NCHILD=0, educ_hs=1, Hispanic=1, educ_advdeg =1)
+
+to_be_predicted2$yhat <- predict(mode1, newdata = to_be_predicted2)
+lines(yhat ~ AGE, data = to_be_predicted2)
+
+```
+
+```{r}
+#7. (20 points) Estimate a simple logit model, for the outcome variable Work_Fulltime <- (UHRSWORK >= 35), within your subsample.
+#  a. Explain what variables you choose to use as predictors. Do they seem exogenous? Consider whether polynomials in Age are important or interactions with dummy variables.  
+# b. Do your estimates seem plausible? Are the estimates each statistically significant?
+ # c. Construct a joint test of whether a reasonable set of coefficients (such as age polynomials, or education dummies) are all zero.
+ # d. What are the predicted probabilities for a few particular groups?
+  #e. How many Type I and Type II errors are made by the model?
+
+
+
+datus1$UHRSWORK <- as.factor(datus1$UHRSWORK)
+Logit12 <-glm(UHRSWORK ~ below_povertyline + Hispanic + I(AfAm*educ_advdeg) + RENT, family=binomial, data = datus1)
+
+anova(Logit12)
+
+exp(Logit12$coefficients) 
+#higher than 1, most likely working fulltime. lower the one, the opposite less likely to be working fulltime. 
+
+#joint hypthesis test
+linearHypothesis(Logit12, c("Hispanic=0", "RENT=0")
+
+
+
+summary(Logit12)
+
+#predicted probablities logit
+plogit <- predict(Logit12, datus1, type = "response")
+summary(plogit)
+premodellogit5 <- (plogit > 0.5)
+
+
+#percent correctly predicted values
+
+predtable <- table(pred = premodellogit5, true = datus1$UHRSWORK)
+predtable
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
